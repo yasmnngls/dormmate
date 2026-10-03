@@ -41,3 +41,77 @@ jobs:
 
       - name: Build
         run: pnpm --filter web build
+
+  database:
+    name: database
+    runs-on: ubuntu-latest
+    env:
+      DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - name: Checkout v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install pnpm v6.1.0
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413
+
+      - name: Setup Node v7.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Start Supabase
+        run: pnpm supabase start -x studio,imgproxy,storage-api,realtime,edge-runtime,logflare,vector,supavisor,mailpit
+
+      - name: Reset database
+        id: reset
+        run: pnpm supabase db reset
+
+      - name: pgTAP
+        run: pnpm supabase test db
+
+      - name: Perf probe
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: |
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/perf/enrollment-probe.sql | tee perf.txt
+          ! grep -q "Seq Scan on membership" perf.txt
+          grep "Execution Time" perf.txt | awk '{print $3}' | sort -n | awk '{a[NR]=$1} END {m=a[int((NR+1)/2)]; print "median ms", m; exit !(NR == 5 && m < 20)}'
+          for i in 1 2 3; do
+            start=$(date +%s.%N)
+            pnpm supabase test db > /dev/null
+            echo "supabase test db seconds $(echo "$(date +%s.%N) - $start" | bc)"
+          done | tee -a perf.txt | awk '{print} $NF >= 60 {slow=1} END {exit slow}'
+
+      - name: Upload perf log v7.0.1
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: perf
+          path: perf.txt
+
+      - name: Generated types are current
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: |
+          pnpm db:types
+          git add --intent-to-add apps/web/lib/database.types.ts
+          git diff --exit-code apps/web/lib/database.types.ts
+
+      - name: Upload generated types v7.0.1
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: database-types
+          path: apps/web/lib/database.types.ts
+
+      - name: Isolation test fails without the staff policy
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: |
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "drop policy staff_read on public.property"
+          if pnpm supabase test db supabase/tests/isolation.test.sql > mutation.txt 2>&1; then
+            cat mutation.txt
+            exit 1
+          fi
+          grep -E "Failed test|not ok" mutation.txt

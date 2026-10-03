@@ -12,10 +12,12 @@
   "scripts": {
     "check": "biome check .",
     "typecheck": "pnpm --filter web typegen && tsc -p packages/matching --noEmit && tsc -p apps/web --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:types": "supabase gen types typescript --local > apps/web/lib/database.types.ts && biome format --write apps/web/lib/database.types.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "supabase": "2.119.0",
     "typescript": "6.0.3",
     "vitest": "5.0.3"
   }
