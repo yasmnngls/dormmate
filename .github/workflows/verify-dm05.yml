@@ -1,0 +1,202 @@
+name: verify-dm05
+
+on:
+  push:
+    branches:
+      - verify/dm05-48b99c1
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  live:
+    name: live lanes
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+      HEAD_SHA: 48b99c1fab793d57a08190a5e20bd70d8917e3f6
+      TRUNK_SHA: 3ff1e533cf2f442cd87442da845d8f8bcd644462
+    steps:
+      - name: Checkout v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 2
+
+      - name: Provenance
+        run: |
+          echo "checked out HEAD=$(git rev-parse HEAD)"
+          echo "parent HEAD^=$(git rev-parse HEAD^)"
+          test "$(git rev-parse HEAD^)" = "$HEAD_SHA"
+          echo "files differing from PR head:"
+          git diff --name-only "$HEAD_SHA" HEAD
+          if git diff --name-only "$HEAD_SHA" HEAD | grep -Ev '^(verify/|\.github/workflows/verify-dm05\.yml$)'; then
+            echo "PROVENANCE FAIL: product files differ from PR head"; exit 1
+          fi
+          echo "PROVENANCE OK: product tree identical to $HEAD_SHA"
+
+      - name: Install pnpm v6.1.0
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413
+
+      - name: Setup Node v7.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Start Supabase
+        run: |
+          pnpm supabase --version
+          pnpm supabase start -x studio,imgproxy,storage-api,realtime,edge-runtime,logflare,vector,supavisor,mailpit
+          psql --version
+
+      - name: Lane 1 - trunk has no schema
+        run: |
+          git fetch --depth 1 origin "$TRUNK_SHA"
+          mkdir -p "$RUNNER_TEMP/trunk"
+          git archive "$TRUNK_SHA" | tar -x -C "$RUNNER_TEMP/trunk"
+          echo "trunk commit: $(git rev-parse "$TRUNK_SHA")"
+          ls -la "$RUNNER_TEMP/trunk"
+          echo "supabase/ paths tracked at trunk: $(git ls-tree -r --name-only "$TRUNK_SHA" | grep -c '^supabase/' || true)"
+          if [ -e "$RUNNER_TEMP/trunk/supabase" ]; then echo "LANE1 TRUNK UNEXPECTED: supabase/ exists"; exit 1; fi
+          echo "LANE1 TRUNK RECORD: trunk $TRUNK_SHA has no supabase/ directory"
+          echo "--- attempting db reset at trunk (expected to fail: no project) ---"
+          cd "$RUNNER_TEMP/trunk"
+          set +e
+          timeout 180 "$GITHUB_WORKSPACE/node_modules/.bin/supabase" db reset --workdir "$RUNNER_TEMP/trunk" 2>&1
+          rc=$?
+          set -e
+          echo "LANE1 TRUNK RECORD: trunk db reset exit code $rc"
+
+      - name: Reset database (head)
+        id: reset
+        run: |
+          pnpm supabase db reset 2>&1 | tee "$RUNNER_TEMP/reset.txt"
+          if grep -Ei '^(error|fatal)' "$RUNNER_TEMP/reset.txt"; then echo "LANE1 HEAD FAIL: error in reset output"; exit 1; fi
+          echo "LANE1 HEAD: db reset at $HEAD_SHA exited 0"
+
+      - name: Lane 1 - head seed rows
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f verify/lane1-seed.sql 2>&1
+
+      - name: Control - pgTAP passes unmutated
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: pnpm supabase test db 2>&1
+
+      - name: Lane 2 - staff A reads only workspace A enrollment
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f verify/lane2-staff-enrollment.sql 2>&1
+
+      - name: Lane 3 - cross-workspace property insert rejected
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f verify/lane3-cross-insert.sql 2>&1
+
+      - name: Lane 4 - student A reads only own profile_version
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f verify/lane4-student-profile.sql 2>&1
+
+      - name: Lane 5 - authenticated cannot delete or update audit_event
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f verify/lane5-audit.sql 2>&1
+
+      - name: Lane 6 - RLS on for every public table
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f verify/lane6-rls.sql 2>&1
+
+      - name: Lane 10 - anon reads 0 workspace rows
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f verify/lane10-anon.sql 2>&1
+
+      - name: Lane 8 - generated types are current
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: |
+          echo "before: $(sha256sum apps/web/lib/database.types.ts)"
+          pnpm exec supabase gen types typescript --local > apps/web/lib/database.types.ts
+          pnpm exec biome format --write apps/web/lib/database.types.ts
+          echo "after:  $(sha256sum apps/web/lib/database.types.ts)"
+          git status --short
+          if git diff --exit-code apps/web/lib/database.types.ts; then
+            echo "LANE8 PASS: git diff --exit-code apps/web/lib/database.types.ts is empty"
+          else
+            echo "LANE8 FAIL: generated types differ from committed file"; exit 1
+          fi
+
+      - name: Perf - bulk seed
+        id: perfseed
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f verify/perf-seed.sql 2>&1
+
+      - name: Perf - explain analyze and pgTAP timing
+        if: ${{ !cancelled() && steps.perfseed.outcome == 'success' }}
+        run: |
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f verify/perf-explain.sql 2>&1 | tee "$RUNNER_TEMP/plans.txt"
+          fail=0
+          if grep -n "Seq Scan on membership" "$RUNNER_TEMP/plans.txt"; then echo "PERF FAIL: Seq Scan on membership"; fail=1; fi
+          times=$(grep "Execution Time:" "$RUNNER_TEMP/plans.txt" | awk '{print $3}')
+          echo "execution times ms: $(echo $times)"
+          count=$(echo "$times" | grep -c . || true)
+          median=$(echo "$times" | sort -n | awk '{a[NR]=$1} END {print a[int((NR+1)/2)]}')
+          echo "PERF median execution ms over $count plans: $median"
+          if [ "$count" -ne 5 ]; then echo "PERF FAIL: expected 5 plans, got $count"; fail=1; fi
+          if awk -v m="$median" 'BEGIN {exit !(m > 20)}'; then echo "PERF FAIL: median > 20 ms"; fail=1; fi
+          echo "--- informational: nested helper plans via auto_explain ---"
+          psql "$DB_URL" -X -f verify/perf-nested.sql 2>&1 || echo "auto_explain unavailable (informational only)"
+          echo "--- supabase test db timing x3 (with bulk seed present) ---"
+          for i in 1 2 3; do
+            s=$(date +%s.%N)
+            set +e
+            pnpm supabase test db > "$RUNNER_TEMP/t$i.txt" 2>&1
+            rc=$?
+            set -e
+            e=$(date +%s.%N)
+            secs=$(awk -v s="$s" -v e="$e" 'BEGIN {printf "%.2f", e - s}')
+            echo "PERF supabase test db run $i: ${secs}s exit=$rc"
+            tail -n 4 "$RUNNER_TEMP/t$i.txt"
+            if awk -v x="$secs" 'BEGIN {exit !(x > 60)}'; then echo "PERF FAIL: run $i > 60 s"; fail=1; fi
+            if [ "$rc" -ne 0 ]; then echo "PERF NOTE: run $i exited $rc"; cat "$RUNNER_TEMP/t$i.txt"; fi
+          done
+          if [ "$fail" -ne 0 ]; then exit 1; fi
+          echo "PERF PASS: no Seq Scan on membership, median ${median} ms <= 20, all test runs <= 60 s"
+
+      - name: Perf - restore with db reset
+        id: restore
+        if: ${{ !cancelled() && steps.reset.outcome == 'success' }}
+        run: pnpm supabase db reset 2>&1
+
+      - name: Lane 7 - isolation test fails without staff policy
+        if: ${{ !cancelled() && steps.restore.outcome == 'success' }}
+        run: |
+          q="select policyname, cmd, roles from pg_policies where schemaname = 'public' and tablename = 'property' order by 1"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c "$q"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c "drop policy staff_read on public.property"
+          echo "--- policies after drop ---"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c "$q"
+          set +e
+          pnpm supabase test db > "$RUNNER_TEMP/lane7.txt" 2>&1
+          rc=$?
+          set -e
+          cat "$RUNNER_TEMP/lane7.txt"
+          echo "LANE7 mutated supabase test db exit code: $rc"
+          echo "--- failing assertions ---"
+          grep -nE "not ok|Failed|FAIL" "$RUNNER_TEMP/lane7.txt" || true
+          echo "--- restore: db reset ---"
+          pnpm supabase db reset 2>&1
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -c "$q"
+          set +e
+          pnpm supabase test db > "$RUNNER_TEMP/lane7-restored.txt" 2>&1
+          rc2=$?
+          set -e
+          tail -n 6 "$RUNNER_TEMP/lane7-restored.txt"
+          echo "LANE7 restored supabase test db exit code: $rc2"
+          if [ "$rc" -ne 0 ] && grep -qE "Failed test.*property" "$RUNNER_TEMP/lane7.txt" && [ "$rc2" -eq 0 ]; then
+            echo "LANE7 PASS: supabase test db failed with staff_read dropped on property and passed after db reset"
+          else
+            echo "LANE7 FAIL: mutated_exit=$rc restored_exit=$rc2"; exit 1
+          fi
