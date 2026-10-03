@@ -1,0 +1,21 @@
+{
+  "name": "dormmate",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "author": "Yhasmen Nogales <yhasmennogales04@gmail.com>",
+  "packageManager": "pnpm@12.8.1",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "check": "biome check .",
+    "typecheck": "npm run typegen --prefix apps/web && tsc -b",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
+  }
+}
