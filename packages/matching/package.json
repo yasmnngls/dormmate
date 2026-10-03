@@ -7,5 +7,9 @@
   "author": "Yhasmen Nogales <yhasmennogales04@gmail.com>",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "scripts": {
+    "fixture": "node scripts/run.ts",
+    "test": "vitest run --root ../.. packages/matching"
   }
 }
