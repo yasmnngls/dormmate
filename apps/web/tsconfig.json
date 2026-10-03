@@ -21,6 +21,5 @@
     "messages/**/*.json",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "dist"],
-  "references": [{ "path": "../../packages/matching" }]
+  "exclude": ["node_modules", "dist"]
 }

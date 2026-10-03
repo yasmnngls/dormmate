@@ -9,6 +9,6 @@ coverage
 .env
 .env.*
 !.env.example
-# next dev rewrites these. Keep the rewrite out of git.
 apps/web/AGENTS.md
 apps/web/CLAUDE.md
+apps/web/next-env.d.ts

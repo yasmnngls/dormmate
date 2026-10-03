@@ -1,6 +1,7 @@
 {
   "name": "dormmate",
   "private": true,
+  "license": "UNLICENSED",
   "version": "0.1.0",
   "type": "module",
   "author": "Yhasmen Nogales <yhasmennogales04@gmail.com>",
@@ -10,7 +11,7 @@
   },
   "scripts": {
     "check": "biome check .",
-    "typecheck": "npm run typegen --prefix apps/web && tsc -b",
+    "typecheck": "pnpm --filter web typegen && tsc -b",
     "test": "vitest run"
   },
   "devDependencies": {
