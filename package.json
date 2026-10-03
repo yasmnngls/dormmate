@@ -1,0 +1,22 @@
+{
+  "name": "dormmate",
+  "private": true,
+  "license": "UNLICENSED",
+  "version": "0.1.0",
+  "type": "module",
+  "author": "Yhasmen Nogales <yhasmennogales04@gmail.com>",
+  "packageManager": "pnpm@12.8.1",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "check": "biome check .",
+    "typecheck": "pnpm --filter web typegen && tsc -p packages/matching --noEmit && tsc -p apps/web --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
+  }
+}

@@ -1,0 +1,14 @@
+node_modules
+.pnpm-store
+.next
+dist
+out
+coverage
+*.tsbuildinfo
+.DS_Store
+.env
+.env.*
+!.env.example
+apps/web/AGENTS.md
+apps/web/CLAUDE.md
+apps/web/next-env.d.ts
