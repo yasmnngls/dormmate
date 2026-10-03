@@ -1,0 +1,16 @@
+---
+description: Attribute all authorship and contributions to Yhasmen Nogales
+alwaysApply: true
+---
+
+# Authorship
+
+Yhasmen Nogales is the author of everything in this repository.
+
+- Commits: author and committer are `Yhasmen Nogales <yhasmennogales04@gmail.com>`. Do not add `Co-authored-by` trailers or tool or AI attribution.
+- Docs: bylines read `Yhasmen Nogales`, never another name or handle.
+- Code: any author field uses Yhasmen Nogales: `package.json` `author`, license copyright holder, `CODEOWNERS`, file headers if the file type requires them, changelogs, PR and issue bodies.
+
+```json
+"author": "Yhasmen Nogales <yhasmennogales04@gmail.com>"
+```
