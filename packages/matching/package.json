@@ -9,7 +9,11 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "fixture": "node --import ./scripts/resolve-ts.mjs scripts/run.ts",
+    "fixture": "tsx scripts/run.ts",
     "test": "vitest run --root ../.. packages/matching"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.2",
+    "tsx": "4.23.15"
   }
 }
