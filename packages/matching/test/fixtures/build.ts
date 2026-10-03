@@ -10,7 +10,7 @@ import {
   roomId,
   type ScaleAnswer,
   type Settings,
-} from "../../src/index.ts";
+} from "../../src/index";
 
 type Scale = ScaleAnswer["value"];
 

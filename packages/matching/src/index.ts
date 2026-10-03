@@ -1,4 +1,4 @@
 export const ENGINE_VERSION = "0.1.0";
 
-export { match } from "./match.ts";
-export * from "./types.ts";
+export { match } from "./match";
+export * from "./types";

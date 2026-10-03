@@ -1,10 +1,10 @@
-import { answerSimilarity } from "./similarity.ts";
+import { answerSimilarity } from "./similarity";
 import {
   type Applicant,
   CATEGORIES,
   type Category,
   type Settings,
-} from "./types.ts";
+} from "./types";
 
 const UNRATED_IMPORTANCE = 2;
 

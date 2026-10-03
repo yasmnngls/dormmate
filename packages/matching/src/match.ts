@@ -1,12 +1,12 @@
-import { assign } from "./assign.ts";
-import { requestGroups } from "./requests.ts";
-import { withFullImportance } from "./score.ts";
+import { assign } from "./assign";
+import { requestGroups } from "./requests";
+import { withFullImportance } from "./score";
 import {
   type BatchInput,
   type BatchResult,
   CATEGORIES,
   type MinutesAnswer,
-} from "./types.ts";
+} from "./types";
 
 function duplicates(ids: readonly string[]): string[] {
   const seen = new Set<string>();

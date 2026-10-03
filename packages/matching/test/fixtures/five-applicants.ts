@@ -1,4 +1,4 @@
-import { batch, double, EARLY, LATE, student } from "./build.ts";
+import { batch, double, EARLY, LATE, student } from "./build";
 
 export const input = batch(
   [

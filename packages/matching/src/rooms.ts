@@ -1,4 +1,4 @@
-import type { Applicant, GenderPolicy, Room } from "./types.ts";
+import type { Applicant, GenderPolicy, Room } from "./types";
 
 const FEMALE_FIRST: readonly GenderPolicy[] = ["female", "any"];
 const MALE_FIRST: readonly GenderPolicy[] = ["male", "any"];

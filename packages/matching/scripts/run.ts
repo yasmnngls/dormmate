@@ -1,5 +1,5 @@
-import { type BatchInput, match } from "../src/index.ts";
-import { randomInput } from "../test/fixtures/random.ts";
+import { type BatchInput, match } from "../src/index";
+import { randomInput } from "../test/fixtures/random";
 
 const USAGE = "usage: run.ts <fixture-name> | run.ts --random <n> --seed <s>";
 
@@ -15,7 +15,7 @@ async function readInput(args: readonly string[]): Promise<BatchInput> {
   const name = args[0];
   if (name === undefined || !/^[a-z0-9-]+$/.test(name)) throw new Error(USAGE);
   const fixture: { input?: BatchInput } = await import(
-    `../test/fixtures/${name}.ts`
+    `../test/fixtures/${name}`
   );
   if (fixture.input === undefined) {
     throw new Error(`fixture ${name} exports no input`);

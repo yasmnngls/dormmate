@@ -1,6 +1,6 @@
-import { fitsRoom, isEligiblePair } from "./eligibility.ts";
-import { RoomPool } from "./rooms.ts";
-import type { Applicant, Drop, DropReason, Room, Settings } from "./types.ts";
+import { fitsRoom, isEligiblePair } from "./eligibility";
+import { RoomPool } from "./rooms";
+import type { Applicant, Drop, DropReason, Room, Settings } from "./types";
 
 export type LockedGroup = { members: readonly Applicant[]; room: Room };
 

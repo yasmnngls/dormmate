@@ -1,4 +1,4 @@
-import { batch, double, EARLY, student } from "./build.ts";
+import { batch, double, EARLY, student } from "./build";
 
 /** ren is undisclosed and most like ann, but only room-2 accepts any gender. */
 export const input = batch(

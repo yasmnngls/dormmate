@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "fixture": "node scripts/run.ts",
+    "fixture": "node --import ./scripts/resolve-ts.mjs scripts/run.ts",
     "test": "vitest run --root ../.. packages/matching"
   }
 }

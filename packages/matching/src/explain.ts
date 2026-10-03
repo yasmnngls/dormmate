@@ -1,5 +1,5 @@
-import { categoryTerms } from "./score.ts";
-import type { Applicant, Category, Settings } from "./types.ts";
+import { categoryTerms } from "./score";
+import type { Applicant, Category, Settings } from "./types";
 
 const TOP_COUNT = 3;
 

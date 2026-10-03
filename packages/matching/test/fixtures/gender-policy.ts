@@ -1,4 +1,4 @@
-import { batch, double, student } from "./build.ts";
+import { batch, double, student } from "./build";
 
 /** fay and gus request each other, but every room is female-only. */
 export const input = batch(

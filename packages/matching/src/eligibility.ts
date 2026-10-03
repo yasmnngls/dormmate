@@ -1,5 +1,5 @@
-import { answerSimilarity } from "./similarity.ts";
-import type { Applicant, Room, Settings } from "./types.ts";
+import { answerSimilarity } from "./similarity";
+import type { Applicant, Room, Settings } from "./types";
 
 function passesDealBreakers(
   holder: Applicant,

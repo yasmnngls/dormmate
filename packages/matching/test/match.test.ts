@@ -1,16 +1,16 @@
 import { describe, expect, test } from "vitest";
-import { match } from "../src/index.ts";
-import { pairScore } from "../src/score.ts";
-import { batch, double, EQUAL_WEIGHTS, student } from "./fixtures/build.ts";
-import { input as fiveApplicants } from "./fixtures/five-applicants.ts";
-import { input as fourStudents } from "./fixtures/four-students.ts";
-import { input as genderPolicy } from "./fixtures/gender-policy.ts";
-import { input as mutualPair } from "./fixtures/mutual-pair.ts";
-import { randomInput } from "./fixtures/random.ts";
-import { input as smokingDealBreaker } from "./fixtures/smoking-deal-breaker.ts";
-import { input as threeMutual } from "./fixtures/three-mutual.ts";
-import { input as undisclosed } from "./fixtures/undisclosed.ts";
-import { input as undisclosedGendered } from "./fixtures/undisclosed-gendered.ts";
+import { match } from "../src/index";
+import { pairScore } from "../src/score";
+import { batch, double, EQUAL_WEIGHTS, student } from "./fixtures/build";
+import { input as fiveApplicants } from "./fixtures/five-applicants";
+import { input as fourStudents } from "./fixtures/four-students";
+import { input as genderPolicy } from "./fixtures/gender-policy";
+import { input as mutualPair } from "./fixtures/mutual-pair";
+import { randomInput } from "./fixtures/random";
+import { input as smokingDealBreaker } from "./fixtures/smoking-deal-breaker";
+import { input as threeMutual } from "./fixtures/three-mutual";
+import { input as undisclosed } from "./fixtures/undisclosed";
+import { input as undisclosedGendered } from "./fixtures/undisclosed-gendered";
 
 const rooms = (result: ReturnType<typeof match>) =>
   result.placements.map((p) => [p.roomId, ...p.members]);

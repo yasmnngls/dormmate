@@ -1,4 +1,4 @@
-import { batch, double, EARLY, LATE, student } from "./build.ts";
+import { batch, double, EARLY, LATE, student } from "./build";
 
 /** mia and noa request each other despite opposite habits. ola's request for pia is one-way. */
 export const input = batch(

@@ -1,4 +1,4 @@
-import { batch, double, EARLY, LATE, student } from "./build.ts";
+import { batch, double, EARLY, LATE, student } from "./build";
 
 /** ivy and jo match on every habit but smoking, which ivy marks as a deal-breaker. */
 export const input = batch(

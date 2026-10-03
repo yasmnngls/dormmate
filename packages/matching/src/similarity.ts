@@ -5,7 +5,7 @@ import type {
   ChoiceAnswer,
   MinutesAnswer,
   ScaleAnswer,
-} from "./types.ts";
+} from "./types";
 
 const DAY_MINUTES = 1440;
 const MINUTES_HORIZON = 360;

@@ -1,16 +1,16 @@
-import { fitsRoom, isEligiblePair } from "./eligibility.ts";
-import { explain } from "./explain.ts";
-import { seededRandom } from "./random.ts";
-import type { LockedGroup } from "./requests.ts";
-import { RoomPool } from "./rooms.ts";
-import { pairScore, roomScore } from "./score.ts";
+import { fitsRoom, isEligiblePair } from "./eligibility";
+import { explain } from "./explain";
+import { seededRandom } from "./random";
+import type { LockedGroup } from "./requests";
+import { RoomPool } from "./rooms";
+import { pairScore, roomScore } from "./score";
 import type {
   Applicant,
   EnrollmentId,
   Placement,
   Room,
   Settings,
-} from "./types.ts";
+} from "./types";
 
 const SWAP_SEED = 0x5eed;
 const SWAP_ATTEMPTS_PER_ROOM = 1000;

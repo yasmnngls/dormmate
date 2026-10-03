@@ -1,4 +1,4 @@
-import { seededRandom } from "../../src/random.ts";
+import { seededRandom } from "../../src/random";
 import {
   type Applicant,
   type BatchInput,
@@ -6,8 +6,8 @@ import {
   type Gender,
   type GenderPolicy,
   type Room,
-} from "../../src/types.ts";
-import { double, EQUAL_WEIGHTS, student } from "./build.ts";
+} from "../../src/types";
+import { double, EQUAL_WEIGHTS, student } from "./build";
 
 /** Uniform synthetic applicants and an even doubles inventory. Realistic distributions are a separate generator. */
 export function randomInput(n: number, seed: number): BatchInput {
